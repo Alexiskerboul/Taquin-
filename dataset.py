@@ -3,6 +3,7 @@ import torchvision
 import torchvision.transforms as transform 
 from torch.utils.data import Dataset, DataLoader
 import numpy as np 
+import random
 
 
 class DatasetPuzzle(Dataset):
@@ -19,12 +20,25 @@ class DatasetPuzzle(Dataset):
                                            transform.ToTensor(), 
                                            transform.Normalize((0.4467, 0.4398, 0.4066), (0.2603, 0.2566, 0.2713))
                                        ]))
+        self.etat_cible = tuple(range(9))
         
     def __len__(self):
         """
         Renvoie la taille du dataset
         """
         return len(self.data)
+    
+    def est_soluble(self, h_del, permutation):
+        """
+        Vérifie que le taquin généré est soluble 
+        """
+        inversions = 0
+        tuiles = [t for t in permutation if t != h_del]
+        for i in range(len(tuiles)):
+            for j in range(i + 1, len(tuiles)):
+                if tuiles[i] > tuiles[j]:
+                    inversions += 1
+        return inversions % 2 == 0
     
     def __getitem__(self, indice):
         """
@@ -38,5 +52,9 @@ class DatasetPuzzle(Dataset):
                 patches.append(patch)
         patches = torch.stack(patches)
         permutation = torch.randperm(9)
+        h_del = random.randint(0, 8)
+        while not self.est_soluble(h_del, permutation):
+            h_del = random.randint(0, 8)
+            permutation = torch.randperm(9)
         patches_melange = patches[permutation]
-        return patches, patches_melange, permutation
+        return patches, patches_melange, permutation, h_del

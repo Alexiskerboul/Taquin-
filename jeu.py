@@ -66,8 +66,7 @@ def main(image, h_del, image_cible):
 
 
 trainset = DatasetPuzzle()
-patch, patch_melange, permutation = trainset[300]
-h_del = random.randint(0, 8)
+patch, patch_melange, permutation, h_del = trainset[300]
 image_melange = creation_image_numpy(patch_melange, h_del)
 image_melange = creation_image_pg(image_melange)
 image_cible = creation_image_numpy(patch, h_del)
