@@ -33,9 +33,3 @@ def change_place(image, i_del, j_del, i_cible, j_cible):
     image[i_cible*128:(i_cible+1)*128, j_cible*128:(j_cible+1)*128] = image[i_del*128:(i_del+1)*128, j_del*128:(j_del+1)*128]
     image[i_del*128:(i_del+1)*128, j_del*128:(j_del+1)*128] = temp
     return image
-
-def coups_possibles(h_ref, etat):
-    """
-    Renvoie l'ensemble des états possibles après un coup à partir d'un état initial
-    """
-    
