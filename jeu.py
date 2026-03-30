@@ -4,8 +4,9 @@ from torch.utils.data import DataLoader
 from utils import creation_image_numpy, creation_image_pg, change_place
 import random
 import numpy as np 
+from solver import SolverTaquin
 
-def main(image, h_del, image_cible):
+def main(image, h_del, image_cible, permutation, patch):
     """
     Lance le jeu
     """
@@ -26,6 +27,12 @@ def main(image, h_del, image_cible):
     compteur = 0
     en_cours = True
     partie_gagnee = False
+    en_resolution = False
+    chemin_automatique = []
+    index_etape = 0
+    temps_dernier_coup = 0
+    delai_animation = 700
+    etat_logique = tuple(int(x) for x in permutation)
     while en_cours:
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -48,6 +55,33 @@ def main(image, h_del, image_cible):
                     if np.array_equal(pixels, pixels_cibles):
                         partie_gagnee = True
                     del pixels
+                if event.key == pg.K_SPACE and not en_resolution:
+                    compteur = 0
+                    solver = SolverTaquin(h_del=h_del, etat_initial=etat_logique, etat_cible=tuple(range(9)))
+                    chemin = solver.solve()
+                    if chemin:
+                        chemin_automatique = chemin
+                        en_resolution = True
+                        index_etape = 1  
+                        temps_dernier_coup = pg.time.get_ticks()
+        if en_resolution:
+            temps_actuel = pg.time.get_ticks()
+            if temps_actuel - temps_dernier_coup > delai_animation:
+                if index_etape < len(chemin_automatique):
+                    etat_actuel = chemin_automatique[index_etape]
+                    elem_entiers = [t.item() if hasattr(t, 'item') else t for t in etat_actuel]
+                    position_case_noire = elem_entiers.index(h_del)
+                    patch_melange = patch[elem_entiers]
+                    image_melange = creation_image_numpy(patch_melange, position_case_noire)
+                    image_pg = creation_image_pg(image_melange)
+                    surface_temporaire = pg.surfarray.make_surface(image_pg)
+                    surface_agrandie = pg.transform.scale(surface_temporaire, taille_fenetre)
+                    index_etape += 1
+                    compteur += 1
+                    temps_dernier_coup = temps_actuel  
+                else:
+                    en_resolution = False
+                    partie_gagnee = True 
         ecran.blit(surface_agrandie, (0, 0))
         texte_compteur = police_compteur.render(f" Coups : {compteur} ", True, (255, 255, 255), (0, 0, 0))
         ecran.blit(texte_compteur, (10, 10))
@@ -56,8 +90,8 @@ def main(image, h_del, image_cible):
             fond_sombre.set_alpha(150) 
             fond_sombre.fill((0, 0, 0))
             ecran.blit(fond_sombre, (0, 0))
-            police = pg.font.SysFont(None, 64)
-            texte_victoire = police.render(f"Félicitations ! Tu as gagné en {compteur} coups !", True, (50, 200, 50))
+            police = pg.font.SysFont(None, 32)
+            texte_victoire = police.render(f"Félicitations ! Gagné en {compteur} coups !", True, (50, 200, 50))
             rect_texte = texte_victoire.get_rect(center=(384 // 2, 384 // 2))
             ecran.blit(texte_victoire, rect_texte)
         pg.display.flip()
@@ -71,4 +105,4 @@ image_melange = creation_image_numpy(patch_melange, h_del)
 image_melange = creation_image_pg(image_melange)
 image_cible = creation_image_numpy(patch, h_del)
 image_cible = creation_image_pg(image_cible)
-main(image_melange, h_del, image_cible)
+main(image_melange, h_del, image_cible, permutation, patch)
